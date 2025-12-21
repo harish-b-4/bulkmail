@@ -42,7 +42,7 @@ function App() {
 
     try {
       const response = await axios.post(
-        "http://localhost:3000/sendmail",
+        "https://bulkmailbackend-mgva.onrender.com/sendmail",
         { msg, emailList }
       );
 
@@ -56,36 +56,36 @@ function App() {
       }
     } catch (error) {
       console.error(error);
-      alert("Server error. Check console for details.");
+      alert("Server error");
     }
 
     setStatus(false);
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-green-500 flex items-center justify-center px-4">
+    <div className="min-h-screen bg-gradient-to-br from-sky-500 via-teal-400 to-white flex items-center justify-center px-4">
       <div className="bg-white/90 w-full max-w-2xl rounded-2xl shadow-2xl p-6 sm:p-8">
         {/* Header */}
-        <h1 className="text-3xl font-bold text-center text-blue-900">
+        <h1 className="text-3xl lg:text-5xl font-bold text-center text-blue-900">
           Bulk Mail Sender
         </h1>
 
         {/* Message Box */}
         <div className="mt-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm lg:text-xl font-medium text-gray-700 mb-2">
             Email Message
           </label>
           <textarea
             value={msg}
             onChange={handleMsg}
             placeholder="Enter your email content..."
-            className="w-full h-32 border rounded-lg p-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full h-32 border-2 border-blue-500 rounded-lg p-3 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
 
         {/* File Upload */}
         <div className="mt-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm lg:text-xl font-medium text-gray-700 mb-2">
             Upload File
           </label>
           <div className="rounded-2xl p-[2px] bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 hover:scale-[1.01] transition-transform">
@@ -104,7 +104,7 @@ function App() {
         </div>
 
         {/* Email Count */}
-        <p className="mt-4 text-sm text-gray-700 font-medium">
+        <p className="mt-4 text-sm lg:text-xl text-gray-700 font-medium">
           Total Emails: <span className="text-blue-700 ml-1">{emailList.length}</span>
         </p>
 
@@ -112,8 +112,8 @@ function App() {
         <button
           onClick={send}
           disabled={status}
-          className={`mt-6 w-full py-3 rounded-lg font-semibold text-white bg-gradient-to-r from-blue-600 via-indigo-500 to-green-600 hover:from-blue-700 hover:via-indigo-600 hover:to-green-700 transition duration-300 ${
-            status ? "opacity-60 cursor-not-allowed" : ""
+          className={`mt-6 w-full py-3 rounded-lg font-bold text-white bg-gradient-to-br from-blue-500 to-black  hover:from-blue-700 hover:via-indigo-600 transition duration-300 ${
+            status ? "opacity-60" : ""
           }`}
         >
           {status ? "Sending..." : "Send Email"}
