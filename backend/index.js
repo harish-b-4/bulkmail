@@ -1,95 +1,86 @@
-require("dotenv").config();
+/**********************************
+ * Bulk Mail Sender Backend
+ * Node.js + Express + MongoDB + SendGrid
+ **********************************/
 
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
-const nodemailer = require("nodemailer");
+const sgMail = require("@sendgrid/mail");
 
 const app = express();
 
-
 /* ------------------ MIDDLEWARE ------------------ */
-app.use(cors({ origin: "*" }));
+// Enable CORS for all origins and handle preflight automatically
+app.use(cors({
+  origin: "*",
+  methods: ["GET", "POST", "OPTIONS"],
+  allowedHeaders: ["Content-Type"]
+}));
 app.use(express.json());
 
-
-
-/* ------------------ DB CONNECTION ------------------ */
+/* ------------------ MONGODB CONNECTION ------------------ */
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("MongoDB connected"))
-  .catch((err) => {
-    console.error("MongoDB connection failed", err);
+  .catch(err => {
+    console.error("MongoDB connection error:", err.message);
     process.exit(1);
   });
 
+/* ------------------ SENDGRID SETUP ------------------ */
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-
-/* ------------------ MAIL TRANSPORTER ------------------ */
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS,
-  },
-  tls: {
-    rejectUnauthorized: false,
-  },
-});
-
-
-
-/* ------------------ VERIFY MAILER ------------------ */
-transporter.verify((error) => {
-  if (error) {
-    console.error("Email transporter error:", error.message);
-  } else {
-    console.log("Email transporter ready");
-  }
-});
-
-
-
-/* ------------------ ROUTES ------------------ */
+/* ------------------ ROUTE: SEND EMAIL ------------------ */
 app.post("/sendmail", async (req, res) => {
   const { msg, emailList } = req.body;
 
-  // ✅ Respond immediately
+  // Validate message
+  if (!msg || typeof msg !== "string") {
+    return res.status(400).json({ success: false, message: "Message is required" });
+  }
+
+  // Clean and validate email list
+  const cleanEmails = (emailList || [])
+    .filter(email => typeof email === "string" && email.trim() && email.includes("@"))
+    .map(email => email.trim());
+
+  if (cleanEmails.length === 0) {
+    return res.status(400).json({ success: false, message: "No valid emails found" });
+  }
+
+  // Send emails one by one
+  const results = [];
+
+  for (const email of cleanEmails) {
+    try {
+      await sgMail.send({
+        to: email,
+        from: process.env.EMAIL_USER, // MUST be a verified SendGrid sender
+        subject: "Message from Bulk Mail App",
+        text: msg
+      });
+      console.log("Sent to:", email);
+      results.push({ email, status: "success" });
+    } catch (err) {
+      console.error(`Failed to send to ${email}:`, err.response?.body || err.message);
+      results.push({ email, status: "failed", error: err.response?.body || err.message });
+    }
+  }
+
   res.status(200).json({
     success: true,
-    message: "Email sending started",
+    message: `Processed ${cleanEmails.length} emails`,
+    results
   });
-
-
-  
-  // ✅ Send emails in background
-  try {
-    for (const email of emailList || []) {
-      await transporter.sendMail({
-        from: `"Bulk Mail App" <${process.env.EMAIL_USER}>`,
-        to: email,
-        subject: "Message from Bulk Mail App",
-        text: msg,
-      });
-
-      console.log(`Email sent to: ${email}`);
-    }
-  } catch (err) {
-    console.error("Email sending error:", err.message);
-  }
 });
 
-
-/* ------------------ SERVER ------------------ */
+/* ------------------ START SERVER ------------------ */
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
 
-/* ------------------ SAFETY ------------------ */
-process.on("unhandledRejection", (err) => {
-  console.error("Unhandled Rejection:", err.message);
-});
-
-process.on("uncaughtException", (err) => {
-  console.error("Uncaught Exception:", err.message);
-});
+/* ------------------ ERROR HANDLING ------------------ */
+process.on("unhandledRejection", err => console.error("Unhandled Rejection:", err.message));
+process.on("uncaughtException", err => console.error("Uncaught Exception:", err.message));
