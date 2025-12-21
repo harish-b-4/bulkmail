@@ -9,7 +9,7 @@ const app = express();
 
 
 /* ------------------ MIDDLEWARE ------------------ */
-app.use(cors());
+app.use(cors({ origin: "*" }));
 app.use(express.json());
 
 
@@ -60,7 +60,7 @@ app.post("/sendmail", async (req, res) => {
   });
 
 
-
+  
   // ✅ Send emails in background
   try {
     for (const email of emailList || []) {
@@ -77,7 +77,6 @@ app.post("/sendmail", async (req, res) => {
     console.error("Email sending error:", err.message);
   }
 });
-
 
 
 /* ------------------ SERVER ------------------ */
