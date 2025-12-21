@@ -12,10 +12,8 @@ function App() {
     setMsg(evt.target.value)
   }
 
-
   function handlefile(event) {
     const file = event.target.files[0]
-
     const reader = new FileReader()
 
     reader.onload = function (event) {
@@ -24,68 +22,104 @@ function App() {
       const sheetName = workbook.SheetNames[0]
       const worksheet = workbook.Sheets[sheetName]
       const emailList = XLSX.utils.sheet_to_json(worksheet, { header: "A" })
-      const totalemail = emailList.map(function (item) { return item.A })
-
-      console.log(totalemail)
+      const totalemail = emailList.map(item => item.A)
       setemailList(totalemail)
     }
 
     reader.readAsBinaryString(file)
   }
 
-
-
   function send() {
-    setStatus(true)
-    axios.post("http://localhost:5000/sendmail", { msg: msg,emailList:emailList })
-      .then(function (data) {
-        if (data.data == true) {
-          alert("Email sent Successfully")
-          setStatus(false)
+    setStatus(true);
+
+    axios.post("http://localhost:3000/sendmail", {
+      msg: msg,
+      emailList: emailList
+    })
+      .then(function (response) {
+
+        // ✅ CORRECT CHECK
+        if (response.data.success === true) {
+          alert("Email sent successfully")
+
+          setMsg("")
+          setemailList([])
+          document.getElementById("fileInput").value = ""
+
+        } else {
+          alert("Failed to send email")
         }
-        else {
-          alert("Failed")
-        }
+
+        setStatus(false);
       })
+      .catch(function (error) {
+        console.error(error);
+        alert("Server error");
+        setStatus(false);
+      });
   }
 
+
   return (
-    <div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-900 to-blue-400 flex items-center justify-center px-3 sm:px-4">
 
-      <div className="bg-blue-950 text-white text-center">
-        <h1 className="text-2xl font-medium px-5 py-3">Bulk Mail</h1>
-      </div>
+      <div className="bg-white w-full max-w-2xl rounded-xl sm:rounded-2xl shadow-2xl p-4 sm:p-6 md:p-8">
 
-      <div className="bg-blue-800 text-white text-center">
-        <h1 className="font-medium px-5 py-3">We can help your business with sending multiple emails at once</h1>
-      </div>
+        {/* Header */}
+        <h1 className="text-2xl sm:text-3xl font-bold text-center text-blue-900">
+          Bulk Mail Sender
+        </h1>
 
-      <div className="bg-blue-600 text-white text-center">
-        <h1 className="font-medium px-5 py-3">Drag and Drop</h1>
-      </div>
+        {/* Message Box */}
+        <div className="mt-4 sm:mt-6">
+          <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1 sm:mb-2">
+            Email Message
+          </label>
 
-      <div className="bg-blue-400 flex flex-col items-center text-black px-5 py-3">
-
-        <textarea onChange={handlemsg} value={msg} className="w-[80%] h-32 py-2 outline-none px-2 border-black rounded-md" placeholder="Enter the email text..."></textarea>
-
-        <div>
-          <input onChange={handlefile} type="file" className="border-4 border-dashed py-4 px-4 mt-5 mb-5" />
+          <textarea
+            onChange={handlemsg}
+            value={msg}
+            placeholder="Enter your email content..."
+            className="w-full h-24 sm:h-32 border rounded-lg p-2 sm:p-3 text-sm sm:text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
         </div>
 
-        <p>Total Emails in the files : {emailList.length}</p>
+        {/* File Upload */}
+        <div className="mt-4 sm:mt-6">
+          <label className="block text-sm sm:text-base font-medium text-gray-700 mb-1 sm:mb-2">
+            Upload File
+          </label>
 
+          <div className="border-2 border-dashed border-blue-400 rounded-lg p-4 sm:p-6 text-center cursor-pointer hover:bg-blue-50">
+            <input
+              id="fileInput"
+              type="file"
+              onChange={handlefile}
+              className="w-full text-sm"
+            />
+            <p className="text-xs sm:text-sm text-gray-500 mt-2">
+              Upload .xlsx file with email list
+            </p>
+          </div>
+        </div>
 
-        <button onClick={send} className="mt-2 bg-blue-950 py-2 px-2 text-white font-medium rounded-md w-fit">{status ? "Sending..." : "Send"}</button>
+        {/* Email Count */}
+        <p className="mt-3 sm:mt-4 text-sm sm:text-base text-gray-700 font-medium">
+          Total Emails :
+          <span className="text-blue-700 ml-1">{emailList.length}</span>
+        </p>
+
+        {/* Send Button */}
+        <button
+          onClick={send}
+          className="mt-5 sm:mt-6 w-full bg-blue-900 text-white py-2.5 sm:py-3 rounded-lg font-semibold text-base sm:text-lg hover:bg-blue-800 transition duration-300"
+        >
+          {status ? "Sending..." : "Send Email"}
+        </button>
 
       </div>
-
-      <div className="bg-blue-300 text-white text-center p-8">
-      </div>
-
-      <div className="bg-blue-200 text-white text-center p-8">
-      </div>
-
     </div>
+
   )
 }
 

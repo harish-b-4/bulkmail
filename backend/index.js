@@ -1,81 +1,96 @@
-const express = require("express")
-const cors = require("cors")
-const nodemailer = require("nodemailer")
-const mongoose = require("mongoose")
-const app = express()
+require("dotenv").config();
+
+const express = require("express");
+const cors = require("cors");
+const mongoose = require("mongoose");
+const nodemailer = require("nodemailer");
+
+const app = express();
 
 
-app.use(cors())
-app.use(express.json())
-
-
-mongoose.connect("mongodb+srv://harishB:9150@cluster0.26wfxfi.mongodb.net/passkey?appName=Cluster0").then(function () {
-    console.log("Connected to DB")
-}).catch(function () {
-    console.log("Failed to connect")
-})
-
-const credential = mongoose.model("credential", {}, "bulkmail")
+/* ------------------ MIDDLEWARE ------------------ */
+app.use(cors({ origin: "*" }));
+app.use(express.json());
 
 
 
-
-
-app.post("/sendmail", function (req, res) {
-
-    var msg = req.body.msg
-    var emailList = req.body.emailList
-
-
-    credential.find().then(function (data) {
-    const transporter = nodemailer.createTransport({
-        service: "gmail",
-        auth: {
-            user: data[0].toJSON().user,
-            pass: data[0].toJSON().pass,
-        },
-    });
+/* ------------------ DB CONNECTION ------------------ */
+mongoose.connect(process.env.MONGO_URI)
+  .then(() => console.log("MongoDB connected"))
+  .catch((err) => {
+    console.error("MongoDB connection failed", err);
+    process.exit(1);
+  });
 
 
 
-    new Promise(async function (resolve, reject) {
-
-        try {
-            for (var i = 0; i < emailList.length; i++) {
-
-                await transporter.sendMail(
-                    {
-                        from: "muneeswariharish656@gmail.com",
-                        to: emailList[i],
-                        subject: "A message from Bulk Mail APP",
-                        text: msg
-                    }
-                )
-                console.log("Email sent to : " + emailList[i])
-            }
-            resolve("Success")
-        }
-        catch (error) {
-            reject("Failed")
-        }
-
-    }).then(function () {
-        res.send(true)
-    }).catch(function () {
-        res.send(false)
-    })
+/* ------------------ MAIL TRANSPORTER ------------------ */
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+  tls: {
+    rejectUnauthorized: false,
+  },
+});
 
 
 
-}).catch(function (error) {
-    console.log(error)
-})
+/* ------------------ VERIFY MAILER ------------------ */
+transporter.verify((error) => {
+  if (error) {
+    console.error("Email transporter error:", error.message);
+  } else {
+    console.log("Email transporter ready");
+  }
+});
 
-})
 
 
-const PORT = process.env.PORT || 5000
+/* ------------------ ROUTES ------------------ */
+app.post("/sendmail", async (req, res) => {
+  const { msg, emailList } = req.body;
 
-app.listen(PORT, function () {
-    console.log(`Server running on port ${PORT}`)
-})
+  // ✅ Respond immediately
+  res.status(200).json({
+    success: true,
+    message: "Email sending started",
+  });
+
+
+
+  // ✅ Send emails in background
+  try {
+    for (const email of emailList || []) {
+      await transporter.sendMail({
+        from: `"Bulk Mail App" <${process.env.EMAIL_USER}>`,
+        to: email,
+        subject: "Message from Bulk Mail App",
+        text: msg,
+      });
+
+      console.log(`Email sent to: ${email}`);
+    }
+  } catch (err) {
+    console.error("Email sending error:", err.message);
+  }
+});
+
+
+
+/* ------------------ SERVER ------------------ */
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
+
+/* ------------------ SAFETY ------------------ */
+process.on("unhandledRejection", (err) => {
+  console.error("Unhandled Rejection:", err.message);
+});
+
+process.on("uncaughtException", (err) => {
+  console.error("Uncaught Exception:", err.message);
+});
