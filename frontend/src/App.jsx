@@ -42,7 +42,7 @@ function App() {
 
     try {
       const response = await axios.post(
-        "https://bulkmailbackend-mgva.onrender.com/sendmail",
+        "https://bulkmailbackend-mgva.onrender.com",
         { msg, emailList }
       );
 
