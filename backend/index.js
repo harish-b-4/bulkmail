@@ -20,19 +20,14 @@ app.use(cors({
 }));
 app.use(express.json());
 
-/* ------------------ MONGODB CONNECTION ------------------ */
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch(err => {
-    console.error("MongoDB connection error:", err.message);
-    process.exit(1);
-  });
 
 /* ------------------ SENDGRID SETUP ------------------ */
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 /* ------------------ ROUTE: SEND EMAIL ------------------ */
 app.post("/sendmail", async (req, res) => {
+  console.log('mail received');
+  
   const { msg, emailList } = req.body;
 
   // Validate message

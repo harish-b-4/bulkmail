@@ -56,7 +56,7 @@ function App() {
       }
     } catch (error) {
       console.error(error);
-      alert("Server error");
+      alert("Server error. Check console for details.");
     }
 
     setStatus(false);
@@ -112,7 +112,7 @@ function App() {
         <button
           onClick={send}
           disabled={status}
-          className={`mt-6 w-full py-3 rounded-lg font-bold text-white bg-gradient-to-br from-blue-500 to-black  hover:from-blue-700 hover:via-indigo-600 transition duration-300 ${
+          className={`mt-6 w-full py-3 rounded-lg font-bold text-white bg-gradient-to-br from-blue-500 to-black  hover:from-blue-700 hover:via-indigo-600transition duration-300 ${
             status ? "opacity-60" : ""
           }`}
         >
